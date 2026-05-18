@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1E3A5F">
+<title>월산리 토지 매각 프로젝트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;900&family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#F7F3EC;--bg-soft:#FAF7F2;--surface:#FFFFFF;--surface-2:#FDFBF7;
+  --navy:#1E3A5F;--navy-deep:#142849;--gold:#C9A961;--gold-deep:#A8893D;--gold-soft:#E8D9B0;
+  --sage:#7A8B6F;--burgundy:#7A2D3F;
+  --inc:#15803d;--inc-soft:#dcfce7;
+  --exp:#b91c1c;--exp-soft:#fee2e2;
+  --info:#1d4ed8;--info-soft:#dbeafe;
+  --warn:#b45309;--warn-soft:#fef3c7;
+  --purple:#6b21a8;--purple-soft:#f3e8ff;
+  --text:#1F1F1F;--text-muted:#6B6B6B;--text-light:#9A9A9A;
+  --border:#E8E1D3;--border-soft:#F0EAE0;
+  --shadow-sm:0 1px 2px rgba(20,40,73,.04),0 1px 3px rgba(20,40,73,.06);
+  --shadow:0 4px 14px rgba(20,40,73,.06),0 2px 4px rgba(20,40,73,.04);
+  --shadow-lg:0 20px 50px -12px rgba(20,40,73,.18),0 8px 18px -8px rgba(20,40,73,.10);
+  --radius:14px;--radius-lg:22px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Pretendard','Noto Sans KR',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;letter-spacing:-.005em;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
+.serif{font-family:'Noto Serif KR',serif;letter-spacing:-.02em}
+
+.topbar{position:sticky;top:0;z-index:50;background:rgba(247,243,236,.85);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid var(--border-soft);padding:14px 22px;padding-top:max(14px,env(safe-area-inset-top))}
+.topbar-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand-mark{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Noto Serif KR';font-weight:700;font-size:18px;box-shadow:0 6px 14px -6px rgba(20,40,73,.5);flex-shrink:0}
+.brand-text{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.brand-title{font-family:'Noto Serif KR';font-weight:700;color:var(--navy);font-size:15px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-sub{font-size:10.5px;color:var(--gold-deep);font-weight:600;letter-spacing:.16em;text-transform:uppercase}
+.top-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.scenario-pill{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:999px;background:rgba(201,169,97,.14);border:1px solid var(--gold-soft);font-size:12px;color:var(--gold-deep);font-weight:700}
+.scenario-pill select{background:transparent;border:none;color:var(--gold-deep);font-weight:800;font-size:13px;font-family:inherit;cursor:pointer;outline:none}
+.icon-btn{width:38px;height:38px;border-radius:11px;border:1px solid var(--border);background:var(--surface);color:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:17px}
+.icon-btn:hover{background:var(--navy);color:var(--gold);border-color:var(--navy)}
+.sync-pill{display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:var(--surface);border:1px solid var(--border);font-size:12px;color:var(--text-muted);font-weight:500}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18)}
+.sync-dot.dirty{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.2)}
+
+.nav-tabs{max-width:1280px;margin:0 auto;display:flex;gap:4px;padding:10px 22px 0;overflow-x:auto;scrollbar-width:none}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tab{padding:10px 13px;border-radius:11px 11px 0 0;background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--text-muted);white-space:nowrap;transition:all .2s;border-bottom:2.5px solid transparent;display:flex;align-items:center;gap:6px}
+.nav-tab:hover{color:var(--navy)}
+.nav-tab.active{color:var(--navy);border-bottom-color:var(--gold)}
+.nav-tab .ico{font-size:14px}
+
+.hero{max-width:1280px;margin:0 auto;padding:40px 22px 24px;background:radial-gradient(ellipse at top right,rgba(201,169,97,.12) 0%,transparent 60%),radial-gradient(ellipse at bottom left,rgba(30,58,95,.06) 0%,transparent 50%)}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:9px;padding:6px 14px;border-radius:999px;background:rgba(201,169,97,.14);color:var(--gold-deep);font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;margin-bottom:18px}
+.hero-eyebrow::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--gold)}
+.hero h1{font-family:'Noto Serif KR';font-weight:700;font-size:clamp(30px,4.8vw,46px);line-height:1.12;color:var(--navy);letter-spacing:-.025em}
+.hero h1 .accent{color:var(--gold-deep);font-style:italic;font-weight:400}
+.hero-lede{margin-top:14px;max-width:680px;font-size:clamp(14px,1.5vw,16px);color:var(--text-muted);line-height:1.7}
+.hero-meta{margin-top:20px;display:flex;flex-wrap:wrap;gap:14px 26px;font-size:12px;color:var(--text-muted)}
+.hero-meta b{color:var(--navy);font-weight:700}
+
+.kpis{max-width:1280px;margin:0 auto;padding:8px 22px 36px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi{position:relative;background:var(--surface);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-sm);border:1px solid var(--border-soft);overflow:hidden;transition:all .25s}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.parcels::before{background:linear-gradient(90deg,var(--navy),#3b82f6)}
+.kpi.area::before{background:linear-gradient(90deg,var(--sage),#86efac)}
+.kpi.value::before{background:linear-gradient(90deg,var(--gold-deep),var(--gold))}
+.kpi.premium::before{background:linear-gradient(90deg,var(--exp),#fca5a5)}
+.kpi-label{font-size:11px;font-weight:700;color:var(--gold-deep);letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px}
+.kpi-value{font-family:'Noto Serif KR';font-weight:700;font-size:clamp(20px,2.3vw,28px);color:var(--navy);letter-spacing:-.02em;line-height:1.15}
+.kpi-sub{margin-top:5px;font-size:11.5px;color:var(--text-muted)}
+.kpi.value .kpi-value{color:var(--gold-deep)}
+.kpi.area .kpi-value{color:var(--sage)}
+.kpi.premium .kpi-value{color:var(--exp)}
+@media(max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}}
+
+.section{max-width:1280px;margin:0 auto;padding:26px 22px}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px;flex-wrap:wrap}
+.section-title{font-family:'Noto Serif KR';font-weight:700;font-size:clamp(20px,2.6vw,26px);color:var(--navy);letter-spacing:-.02em}
+.section-title .badge{display:inline-block;margin-left:10px;padding:3px 10px;border-radius:6px;background:var(--navy);color:var(--gold);font-family:'Pretendard';font-size:12px;font-weight:700;letter-spacing:.05em;vertical-align:middle}
+.section-desc{font-size:13px;color:var(--text-muted);margin-top:4px}
+
+.view{display:none}.view.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.panel{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);padding:24px 26px;box-shadow:var(--shadow-sm);margin-bottom:18px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-soft);gap:14px;flex-wrap:wrap}
+.panel-title{font-family:'Noto Serif KR';font-weight:700;font-size:17px;color:var(--navy);display:flex;align-items:center;gap:9px}
+.panel-title .ic{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}
+
+/* 시나리오 비교 카드 */
+.scenario-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:18px}
+.scn-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;cursor:pointer;transition:all .2s;position:relative}
+.scn-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.scn-card.active{border-color:var(--gold);background:linear-gradient(135deg,var(--surface),#FDFAF1);box-shadow:0 0 0 3px rgba(201,169,97,.15)}
+.scn-card.active::before{content:"✓";position:absolute;top:14px;right:14px;width:24px;height:24px;border-radius:50%;background:var(--gold);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.scn-key{font-family:'Noto Serif KR';font-weight:700;font-size:22px;color:var(--gold-deep);letter-spacing:-.01em}
+.scn-name{font-family:'Noto Serif KR';font-weight:700;font-size:16px;color:var(--navy);margin:4px 0 10px}
+.scn-amt{font-family:'Noto Serif KR';font-weight:700;font-size:20px;color:var(--navy)}
+.scn-desc{font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.55}
+
+/* 진행상태 진행바 */
+.status-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:20px}
+.status-cell{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px 12px;text-align:center;cursor:pointer;transition:all .2s}
+.status-cell:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+.status-cell.active{background:var(--navy);color:var(--gold);border-color:var(--navy)}
+.status-cell .scnt{font-family:'Noto Serif KR';font-size:22px;font-weight:700;line-height:1}
+.status-cell .slbl{font-size:10.5px;font-weight:700;letter-spacing:.06em;margin-top:5px;color:var(--text-muted)}
+.status-cell.active .slbl{color:var(--gold-soft)}
+@media(max-width:760px){.status-bar{grid-template-columns:repeat(3,1fr)}}
+
+/* 전체 토지 총괄표 */
+.summary-table{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--surface);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-soft);box-shadow:var(--shadow-sm)}
+.summary-table thead{background:var(--navy)}
+.summary-table th{padding:11px 9px;color:var(--gold);font-size:10.5px;font-weight:700;letter-spacing:.05em;text-align:left;white-space:nowrap}
+.summary-table th.r{text-align:right}.summary-table th.c{text-align:center}
+.summary-table td{padding:12px 9px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+.summary-table td.r{text-align:right;font-variant-numeric:tabular-nums}
+.summary-table td.c{text-align:center}
+.summary-table tr{cursor:pointer;transition:background .12s}
+.summary-table tr:hover{background:var(--surface-2)}
+.summary-table tr:last-child td{border-bottom:none}
+.summary-table tr.subtotal td{background:linear-gradient(90deg,rgba(122,139,111,.10),rgba(122,139,111,.04));font-weight:700;color:var(--navy);font-size:13px;cursor:default}
+.summary-table tr.subtotal:hover{background:linear-gradient(90deg,rgba(122,139,111,.10),rgba(122,139,111,.04))}
+.summary-table tr.total td{background:linear-gradient(90deg,rgba(201,169,97,.14),rgba(201,169,97,.05));font-weight:700;color:var(--navy);font-family:'Noto Serif KR';font-size:14px;cursor:default;border-top:2px solid var(--gold-soft)}
+.summary-table tr.total:hover{background:linear-gradient(90deg,rgba(201,169,97,.14),rgba(201,169,97,.05))}
+.summary-table tr.road{background:rgba(245,158,11,.04)}
+.summary-table tr.road:hover{background:rgba(245,158,11,.08)}
+.summary-table .pname{font-weight:700;color:var(--navy);font-size:13px}
+
+.tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:10.5px;font-weight:700;letter-spacing:.04em;white-space:nowrap}
+.tag.road{background:var(--warn-soft);color:var(--warn)}
+.st-미진행{background:#f1f5f9;color:#475569}
+.st-매물 등록{background:var(--info-soft);color:var(--info)}
+.st-협상 중{background:var(--warn-soft);color:var(--warn)}
+.st-계약{background:var(--purple-soft);color:var(--purple)}
+.st-잔금 대기{background:#fdf2f8;color:#a21caf}
+.st-완료{background:var(--inc-soft);color:var(--inc)}
+.pri-상{background:var(--exp-soft);color:var(--exp)}
+.pri-중{background:var(--warn-soft);color:var(--warn)}
+.pri-하{background:#f1f5f9;color:#475569}
+
+.summary-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.summary-toolbar select, .summary-toolbar input{padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-family:inherit;font-size:13px;color:var(--text)}
+.summary-toolbar input{flex:1;min-width:180px}
+.summary-toolbar select:focus, .summary-toolbar input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,169,97,.18)}
+
+.data-table-wrap{overflow-x:auto;border-radius:var(--radius)}
+
+@media(max-width:900px){
+  .summary-table thead{display:none}
+  .summary-table tbody, .summary-table tr, .summary-table td{display:block;width:100%}
+  .summary-table tr{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius);padding:14px;margin-bottom:10px;cursor:pointer}
+  .summary-table tr.subtotal, .summary-table tr.total{border:2px solid var(--gold-soft)}
+  .summary-table td{padding:4px 0;border:none;display:flex;justify-content:space-between;font-size:13px}
+  .summary-table td::before{content:attr(data-label);color:var(--text-muted);font-size:11.5px;font-weight:600;margin-right:10px;flex-shrink:0}
+  .summary-table td:first-child{font-weight:700;color:var(--navy);font-family:'Noto Serif KR';font-size:15px;border-bottom:1px solid var(--border-soft);padding-bottom:8px;margin-bottom:6px;display:block}
+  .summary-table td:first-child::before{display:none}
+}
+
+/* 인별 소유 카드 */
+.owner-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.owner-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;cursor:pointer;transition:all .25s;position:relative}
+.owner-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--gold-soft)}
+.owner-name{font-family:'Noto Serif KR';font-weight:700;font-size:18px;color:var(--navy);margin-bottom:4px}
+.owner-meta{font-size:11.5px;color:var(--gold-deep);font-weight:600;letter-spacing:.1em;margin-bottom:14px}
+.owner-line{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0}
+.owner-line span{color:var(--text-muted)}.owner-line b{font-weight:600;font-variant-numeric:tabular-nums}
+.owner-line.bundle b{color:var(--inc)}
+.owner-line.part b{color:var(--gold-deep)}
+.owner-line.total{margin-top:8px;padding-top:10px;border-top:1px dashed var(--border)}
+.owner-line.total b{color:var(--navy);font-family:'Noto Serif KR';font-size:14.5px}
+.owner-road{margin-top:8px;font-size:11px;color:var(--text-light)}
+
+/* 진행상태 카드 (필지) */
+.parcel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.parcel-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-lg);padding:20px 22px;cursor:pointer;transition:all .25s;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.parcel-card:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--gold-soft)}
+.parcel-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--navy),var(--gold))}
+.parcel-card.road::before{background:linear-gradient(90deg,var(--warn),#fbbf24)}
+.parcel-card.completed::before{background:linear-gradient(90deg,var(--inc),#22c55e)}
+.parcel-card-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;gap:10px}
+.parcel-name{font-family:'Noto Serif KR';font-weight:700;font-size:18px;color:var(--navy)}
+.parcel-tags{display:flex;gap:5px;flex-wrap:wrap}
+.parcel-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dotted var(--border)}
+.parcel-row:last-child{border-bottom:none}
+.parcel-row span{color:var(--text-muted)}.parcel-row b{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 도로 분석 */
+.road-table{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-soft)}
+.road-table thead{background:var(--warn)}
+.road-table th{padding:12px 10px;color:#fff;font-size:11px;font-weight:700;text-align:left;letter-spacing:.05em}
+.road-table td{padding:12px 10px;border-bottom:1px solid var(--border-soft);font-variant-numeric:tabular-nums}
+.road-table tr.total td{background:rgba(245,158,11,.10);font-weight:700;color:var(--warn);font-family:'Noto Serif KR'}
+.road-callout{background:linear-gradient(135deg,var(--warn-soft),#fef9c3);border:1px solid var(--warn);border-radius:var(--radius);padding:18px 22px;margin-top:14px}
+.road-callout h4{font-family:'Noto Serif KR';font-size:16px;color:var(--warn);margin-bottom:8px}
+.road-callout ul{margin-left:18px;font-size:13px;color:var(--text);line-height:1.85}
+
+/* 세금 시뮬 */
+.tax-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:760px){.tax-grid{grid-template-columns:1fr}}
+.tax-section h4{font-family:'Noto Serif KR';font-size:15px;color:var(--navy);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--gold-soft)}
+.tax-field{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dotted var(--border);font-size:13px;gap:14px}
+.tax-field label{color:var(--text-muted);flex-shrink:0}
+.tax-field input{padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-soft);font-family:inherit;font-size:13px;text-align:right;width:160px;font-variant-numeric:tabular-nums}
+.tax-field input:focus{outline:none;border-color:var(--gold);background:#fff}
+.tax-result{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);font-size:13px}
+.tax-result span{color:var(--text-muted)}.tax-result b{font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.tax-result.final{margin-top:8px;padding:14px 16px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--gold-deep),var(--gold));color:#fff;font-family:'Noto Serif KR';font-size:16px}
+.tax-result.final span{color:rgba(255,255,255,.85)}.tax-result.final b{color:#fff;font-size:18px}
+
+/* 체크리스트 */
+.checklist-group{margin-bottom:18px}
+.checklist-group h4{font-family:'Noto Serif KR';font-size:15px;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.checklist-group h4 .phase-tag{padding:2px 9px;border-radius:5px;font-size:10.5px;font-weight:700;background:var(--surface-2);color:var(--gold-deep);letter-spacing:.05em}
+.check-item{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:.15s}
+.check-item:hover{border-color:var(--gold-soft);background:var(--surface-2)}
+.check-item.done{opacity:.55;background:var(--surface-2)}
+.check-item.done .check-text{text-decoration:line-through;color:var(--text-muted)}
+.check-box{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;color:transparent;font-size:14px;font-weight:900}
+.check-item.done .check-box{background:var(--inc);border-color:var(--inc);color:#fff}
+.check-text{font-size:13.5px;color:var(--text);flex:1}
+.check-phase{font-size:10.5px;font-weight:700;color:var(--gold-deep);letter-spacing:.06em;flex-shrink:0}
+
+/* 입력·설정 */
+.input-methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-bottom:24px}
+.input-method-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-lg);padding:28px 26px;text-align:left;cursor:pointer;transition:all .25s;box-shadow:var(--shadow-sm);font-family:inherit;color:var(--text);position:relative;overflow:hidden}
+.input-method-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--gold-soft)}
+.input-method-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold-deep),var(--gold))}
+.im-ico{font-size:42px;margin-bottom:14px}
+.input-method-card h3{font-family:'Noto Serif KR';font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.input-method-card p{font-size:13px;color:var(--text-muted);line-height:1.65;margin-bottom:18px}
+.im-cta{font-size:13px;color:var(--navy);font-weight:700}
+
+.settings-card{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);padding:26px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.settings-card h3{font-family:'Noto Serif KR';font-size:18px;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:9px}
+.settings-card p{font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:16px}
+.settings-actions{display:flex;flex-wrap:wrap;gap:10px}
+.sync-badge{display:inline-block;margin-left:8px;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.08em}
+.sync-badge.off{background:rgba(122,45,63,.10);color:var(--burgundy)}
+.sync-badge.on{background:rgba(34,197,94,.12);color:#15803d}
+.sync-badge.syncing{background:rgba(245,158,11,.15);color:#b45309}
+.sync-steps{margin:6px 0 18px 18px;font-size:13px;color:var(--text);line-height:1.85}
+.sync-steps li b{color:var(--navy)}
+.link{color:var(--gold-deep);font-weight:700;text-decoration:underline}
+.sync-info{background:linear-gradient(135deg,var(--surface-2),#FAF5EA);border:1px solid var(--gold-soft);border-radius:var(--radius);padding:14px 18px;margin-bottom:14px}
+.sync-info-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+.sync-info-row span{color:var(--text-muted)}.sync-info-row b{color:var(--navy);font-weight:600}
+.mono{font-family:'SF Mono',Monaco,Consolas,monospace;font-size:11.5px}
+.sync-code-box label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:7px}
+.sync-code-row{display:flex;gap:8px;margin-bottom:8px}
+.sync-code-row input{flex:1;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg-soft);font-family:'SF Mono',Monaco,Consolas,monospace;font-size:11.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis}
+.sync-warn{font-size:11.5px;color:var(--burgundy);margin-top:8px;font-weight:500}
+
+.btn{padding:11px 22px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--navy);color:var(--gold);border-color:var(--navy)}
+.btn-primary:hover{background:var(--navy-deep);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text-muted);border-color:var(--border)}
+.btn-ghost:hover{background:var(--surface);color:var(--text)}
+.btn-danger{background:transparent;color:var(--burgundy);border-color:var(--border)}
+.btn-danger:hover{background:rgba(122,45,63,.06)}
+
+.fab{position:fixed;bottom:24px;right:24px;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--gold-deep),var(--gold));color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 12px 28px -8px rgba(168,137,61,.6);z-index:30;font-weight:700;transition:all .2s}
+.fab:hover{transform:translateY(-3px) scale(1.04)}
+
+.modal-bg{display:none;position:fixed;inset:0;z-index:100;background:rgba(20,40,73,.45);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:18px}
+.modal-bg.active{display:flex;animation:fadeIn .2s}
+.modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:680px;max-height:90vh;overflow:auto;box-shadow:var(--shadow-lg);animation:slideUp .3s}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+.modal-header{padding:22px 26px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:flex-start;gap:14px;position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-title{font-family:'Noto Serif KR';font-size:18px;font-weight:700;color:var(--navy);line-height:1.3}
+.modal-sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.modal-close{width:34px;height:34px;border-radius:10px;border:none;background:var(--surface-2);cursor:pointer;font-size:18px;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.modal-close:hover{background:var(--navy);color:var(--gold)}
+.modal-body{padding:22px 26px}
+.modal-section-title{font-family:'Noto Serif KR';font-size:14px;font-weight:700;color:var(--navy);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border-soft)}
+.modal-section-title:first-child{margin-top:0}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:6px}
+.field input,.field textarea,.field select{width:100%;padding:10px 13px;border-radius:9px;border:1px solid var(--border);background:var(--bg-soft);font-family:inherit;font-size:13.5px;color:var(--text);transition:all .2s}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--gold);background:#fff;box-shadow:0 0 0 3px rgba(201,169,97,.18)}
+.field textarea{min-height:50px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:560px){.field-row,.field-row-3{grid-template-columns:1fr}}
+.modal-foot{padding:16px 26px;border-top:1px solid var(--border-soft);display:flex;gap:10px;justify-content:space-between;background:var(--surface-2);position:sticky;bottom:0}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 22px;border-radius:11px;font-size:13.5px;font-weight:500;box-shadow:0 12px 28px -8px rgba(20,40,73,.5);z-index:200;opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+.toast.ok{background:linear-gradient(135deg,#15803d,#166534)}
+.toast.err{background:linear-gradient(135deg,var(--burgundy),#5a1f2d)}
+
+.empty{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:14px}
+.footer{padding:30px 22px 100px;text-align:center}
+.footer-mark{font-family:'Noto Serif KR';color:var(--navy);font-weight:600;font-size:14px}
+.footer-sub{font-size:11.5px;color:var(--text-light);margin-top:6px;letter-spacing:.06em}
+input[type="file"]{display:none}
+
+@media(max-width:600px){
+  .hero{padding-top:28px}.section{padding:22px 16px}.panel{padding:20px 18px}
+  .top-actions .sync-pill,.top-actions .scenario-pill{display:none}
+  .topbar{padding:12px 16px}.nav-tabs{padding:10px 16px 0}
+  .nav-tab{padding:9px 10px;font-size:11.5px}.brand-sub{display:none}
+  .modal{max-width:100%;border-radius:var(--radius-lg) var(--radius-lg) 0 0;max-height:92vh}.modal-bg{align-items:flex-end;padding:0}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">월</div>
+      <div class="brand-text">
+        <div class="brand-title">월산리 토지 매각</div>
+        <div class="brand-sub">Wolsanri Sale v2</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="scenario-pill">시나리오 <select id="scenarioSelect">
+        <option value="A">A 전체일괄</option>
+        <option value="B" selected>B 부분매각</option>
+        <option value="C">C 인별분리</option>
+      </select></div>
+      <div class="sync-pill" id="syncPill"><span class="sync-dot" id="syncDot"></span><span id="syncText">자동 저장됨</span></div>
+      <button class="icon-btn" id="settingsBtn" title="설정·동기화">⚙</button>
+    </div>
+  </div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" data-view="dash"><span class="ico">📊</span>대시보드</button>
+    <button class="nav-tab" data-view="summary"><span class="ico">📋</span>전체 토지 총괄표</button>
+    <button class="nav-tab" data-view="scenario"><span class="ico">⚖</span>시나리오 분석</button>
+    <button class="nav-tab" data-view="road"><span class="ico">🛣</span>도로부분 분석</button>
+    <button class="nav-tab" data-view="owner"><span class="ico">👥</span>인별 소유현황</button>
+    <button class="nav-tab" data-view="tax"><span class="ico">💰</span>세금 시뮬</button>
+    <button class="nav-tab" data-view="checklist"><span class="ico">✅</span>매각 체크리스트</button>
+    <button class="nav-tab" data-view="status"><span class="ico">🎯</span>진행 상태별</button>
+    <button class="nav-tab" data-view="input"><span class="ico">➕</span>입력·업로드</button>
+    <button class="nav-tab" data-view="settings"><span class="ico">⚙</span>설정·동기화</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- DASHBOARD -->
+<section class="view active" id="view-dash">
+  <div class="hero">
+    <div class="hero-eyebrow"><span id="heroScenario">B 부분매각</span> 기준 매각 추적</div>
+    <h1 class="serif">월산리 토지 <span class="accent">매각 프로젝트</span></h1>
+    <p class="hero-lede">5인 공동소유 19개 필지(7,920㎡, 2,396평) 통합 매각 추진. 전체일괄·부분매각·인별분리 시나리오 비교, 도로 프리미엄 분석, 양도세 시뮬, 단계별 체크리스트까지.</p>
+    <div class="hero-meta">
+      <span>업데이트 <b id="updatedDate">2026-05-18</b></span>
+      <span>총 필지 <b id="totalParcels">19</b>개</span>
+      <span>소유자 <b>5</b>인</span>
+      <span>도로 필지 <b id="totalRoads">6</b>개</span>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi parcels"><div class="kpi-label">총 필지 수</div><div class="kpi-value" id="kpiParcels">-</div><div class="kpi-sub">5인 공동소유</div></div>
+    <div class="kpi area"><div class="kpi-label">총 면적</div><div class="kpi-value" id="kpiArea">-</div><div class="kpi-sub"><span id="kpiPyeong">-</span>평</div></div>
+    <div class="kpi value"><div class="kpi-label">선택 시나리오 매각가</div><div class="kpi-value" id="kpiScenario">-</div><div class="kpi-sub">현재 적용 시나리오</div></div>
+    <div class="kpi premium"><div class="kpi-label">도로 프리미엄 (A-B)</div><div class="kpi-value" id="kpiPremium">-</div><div class="kpi-sub">전체일괄 시 추가 수령</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">시나리오 비교<span class="badge">A·B·C</span></h2><div class="section-desc">클릭 시 해당 시나리오로 전체 앱 전환</div></div></div>
+    <div class="scenario-grid" id="dashScenarioGrid"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">진행 상태별 현황</h2></div></div>
+    <div class="status-bar" id="dashStatusBar"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">인별 소유 요약</h2></div></div>
+    <div class="owner-grid" id="dashOwnerGrid"></div>
+  </div>
+</section>
+
+<!-- 전체 토지 총괄표 -->
+<section class="view" id="view-summary">
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">전체 토지 총괄표</h2><div class="section-desc">19개 필지 — 행 클릭 시 매각 정보 수정 · 헤더 시나리오 단가는 우상단 시나리오 토글</div></div></div>
+    <div class="panel">
+      <div class="summary-toolbar">
+        <select id="filterOwner"><option value="all">전체 소유자</option></select>
+        <select id="filterStatus"><option value="all">전체 상태</option></select>
+        <select id="filterRoad"><option value="all">전체 필지</option><option value="road">도로만</option><option value="land">대지/주차장만</option></select>
+        <input type="text" id="filterText" placeholder="지번 검색…">
+      </div>
+      <div class="data-table-wrap"><table class="summary-table" id="summaryTable">
+        <thead><tr>
+          <th>#</th><th>소유자</th><th>지번</th><th>용도</th>
+          <th class="r">면적(㎡)</th><th class="r">평수</th>
+          <th class="r">공시(원/㎡)</th><th class="r">시나리오 단가</th><th class="r">매각금액</th>
+          <th class="c">진행상태</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- 시나리오 분석 -->
+<section class="view" id="view-scenario">
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">매각 시나리오 분석</h2><div class="section-desc">전체일괄(A) vs 부분매각(B) vs 인별분리(C) — 시나리오별 총 수령액 비교</div></div></div>
+    <div class="scenario-grid" id="scenarioCards"></div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title"><span class="ic">📊</span>시나리오별 소유자 그룹 비교</div></div>
+      <div class="data-table-wrap"><table class="summary-table" id="scenarioCompareTable">
+        <thead><tr>
+          <th>소유자</th><th class="r">A 전체일괄</th><th class="r">B 부분매각</th><th class="r">A-B 차액</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- 도로 분석 -->
+<section class="view" id="view-road">
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">도로 필지 일괄 vs 부분매각 분석</h2><div class="section-desc">도로 필지는 단독 매각 시 사실상 가치 없음 — 일괄매각의 핵심 논거</div></div></div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title"><span class="ic">🛣</span>도로 필지 6개</div><div style="font-size:13px;color:var(--text-muted)" id="roadTotalText">-</div></div>
+      <div class="data-table-wrap"><table class="road-table" id="roadTable">
+        <thead><tr><th>소유자</th><th>지번</th><th>면적(㎡)</th><th>전체매각 단가</th><th>전체매각 금액</th><th>부분매각 단가</th><th>부분매각 금액</th><th>차액(원)</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <div class="road-callout">
+        <h4>▣ 전략적 시사점</h4>
+        <ul>
+          <li>도로 필지는 단독 매각 시 공시지가 수준(196,100원/㎡)에 불과 — 실질 가치 없음</li>
+          <li>전체 일괄매각 시 도로 필지도 대지 수준(1,200,000~2,600,000원/㎡)으로 산정 가능</li>
+          <li>도로 필지 소유자(유재진외4, 유병재외3, 유연진외3, 유길진외4)는 전체 일괄매각에 강한 인센티브 보유</li>
+          <li>부분 매각 시 협상: 도로 포함 필지 소유자가 불리 → 인접 대지 소유자와 공동 매각 조건 협의 필요</li>
+          <li>유재진님 증여 예정 지분 확정 후 일괄매각 법적 요건(전원 동의) 점검 필요</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 인별 소유 -->
+<section class="view" id="view-owner">
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">인별 소유현황 요약</h2><div class="section-desc">5인 소유자별 필지·면적·매각가 비교 — 매각 의사결정 참고</div></div></div>
+    <div class="owner-grid" id="ownerFullGrid"></div>
+  </div>
+</section>
+
+<!-- 세금 시뮬 -->
+<section class="view" id="view-tax">
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">양도세 추정 시뮬레이터</h2><div class="section-desc">매각 전 세금 파악용 — 실제는 세무사 확인 필수</div></div></div>
+    <div class="panel">
+      <div class="tax-grid">
+        <div class="tax-section">
+          <h4>▣ 가정 입력</h4>
+          <div class="tax-field"><label>매각 시나리오</label><select id="taxScenario" style="padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-soft);font-family:inherit;font-size:13px"><option value="A">A 전체일괄</option><option value="B" selected>B 부분매각</option><option value="C">C 인별분리</option></select></div>
+          <div class="tax-field"><label>매각 대금 (원)</label><input id="tax-sale" type="text" inputmode="numeric"></div>
+          <div class="tax-field"><label>취득가액 (원)</label><input id="tax-acq" type="text" inputmode="numeric"></div>
+          <div class="tax-field"><label>필요경비 (원)</label><input id="tax-exp" type="text" inputmode="numeric"></div>
+          <div class="tax-field"><label>보유기간 (년)</label><input id="tax-hold" type="text" inputmode="numeric"></div>
+          <div class="tax-field"><label>장기보유공제율 (%)</label><input id="tax-deduct" type="text" inputmode="decimal"></div>
+          <div class="tax-field"><label>양도세율 (%)</label><input id="tax-rate" type="text" inputmode="decimal"></div>
+          <div class="tax-field"><label>지방소득세율 (%)</label><input id="tax-localrate" type="text" inputmode="decimal"></div>
+        </div>
+        <div class="tax-section">
+          <h4>▣ 추정 세금 계산</h4>
+          <div class="tax-result"><span>양도차익</span><b id="tax-gain">-</b></div>
+          <div class="tax-result"><span>장기보유특별공제</span><b id="tax-deductAmt">-</b></div>
+          <div class="tax-result"><span>과세표준</span><b id="tax-base">-</b></div>
+          <div class="tax-result"><span>양도소득세</span><b id="tax-tax">-</b></div>
+          <div class="tax-result"><span>지방소득세</span><b id="tax-localtax">-</b></div>
+          <div class="tax-result"><span>총 세금</span><b id="tax-total">-</b></div>
+          <div class="tax-result final"><span>세후 수령 예상액</span><b id="tax-after">-</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 매각 체크리스트 -->
+<section class="view" id="view-checklist">
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">매각 체크리스트 & 추진 일정</h2><div class="section-desc">단계별 점검 항목 — 완료 시 체크박스 클릭</div></div></div>
+    <div class="panel"><div id="checklistContainer"></div></div>
+  </div>
+</section>
+
+<!-- 진행 상태별 -->
+<section class="view" id="view-status">
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">진행 상태별 필지</h2></div></div>
+    <div id="statusGroups"></div>
+  </div>
+</section>
+
+<!-- 입력 -->
+<section class="view" id="view-input">
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">필지 추가·갱신</h2></div></div>
+    <div class="input-methods">
+      <button class="input-method-card" id="imManual"><div class="im-ico">✏️</div><h3>수동 입력</h3><p>새 필지 또는 매각 정보를 직접 입력.</p><div class="im-cta">한 건 입력하기 →</div></button>
+      <button class="input-method-card" id="imExcel"><div class="im-ico">📊</div><h3>엑셀 업로드</h3><p>지번 매칭으로 매각 정보 일괄 갱신.</p><div class="im-cta">엑셀 파일 선택 →</div></button>
+      <button class="input-method-card" id="imScan"><div class="im-ico">📷</div><h3>스캔 사진</h3><p>계약서·등기부등본 사진 첨부.</p><div class="im-cta">사진 업로드 →</div></button>
+    </div>
+    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+    <input type="file" id="scanFile" accept="image/*" capture="environment">
+  </div>
+  <div class="section" id="scanSection" style="display:none">
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title"><span class="ic">📷</span>스캔 사진</div><button class="btn btn-ghost" id="btnScanClose">닫기</button></div>
+      <img id="scanImg" alt="스캔" style="max-width:100%;max-height:70vh;display:block;margin:0 auto;border-radius:10px">
+    </div>
+  </div>
+</section>
+
+<!-- 설정 -->
+<section class="view" id="view-settings">
+  <div class="section">
+    <div class="section-head"><div><h2 class="section-title">설정 · 동기화 · 백업</h2></div></div>
+    <div class="settings-card" id="cloudSyncCard">
+      <h3>☁️ 자동 클라우드 동기화 <span id="syncStateBadge" class="sync-badge off">OFF</span></h3>
+      <p>한 기기에서 수정 → <b>5초 이내</b> 모든 기기 반영. 비공개 GitHub Gist.</p>
+      <div id="syncStep1">
+        <ol class="sync-steps">
+          <li><b>GitHub Token:</b> <a href="https://github.com/settings/tokens/new?scopes=gist&description=Wolsan+Sale+Sync" target="_blank" rel="noopener" class="link">발급 페이지</a></li>
+          <li>토큰 붙여넣고 "동기화 시작"</li>
+          <li>다른 기기는 <b>동기화 코드</b>만 붙여넣기</li>
+        </ol>
+        <div class="field"><label>GitHub Personal Access Token</label><input type="password" id="ghToken" placeholder="ghp_..." autocomplete="off"></div>
+        <div class="field"><label>또는 동기화 코드</label><input type="text" id="ghSyncCode" placeholder="wolsanSync:..." autocomplete="off"></div>
+        <div class="settings-actions"><button class="btn btn-primary" id="btnSyncStart">☁️ 동기화 시작</button></div>
+      </div>
+      <div id="syncStep2" style="display:none">
+        <div class="sync-info">
+          <div class="sync-info-row"><span>상태</span><b id="syncStatusText">연결됨</b></div>
+          <div class="sync-info-row"><span>마지막 동기화</span><b id="syncLastTime">방금 전</b></div>
+          <div class="sync-info-row"><span>Gist ID</span><b id="syncGistId" class="mono">-</b></div>
+        </div>
+        <div class="sync-code-box">
+          <label>동기화 코드</label>
+          <div class="sync-code-row"><input type="text" id="syncCodeOut" readonly><button class="btn btn-primary" id="btnCopyCode">복사</button></div>
+          <p class="sync-warn">⚠️ 본인 기기에만 입력 (토큰 포함)</p>
+        </div>
+        <div class="settings-actions">
+          <button class="btn btn-primary" id="btnSyncNow">↻ 지금 동기화</button>
+          <button class="btn btn-ghost" id="btnSyncStop">동기화 끄기</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-card">
+      <h3>📥 수동 백업·복원 (JSON)</h3>
+      <p>파일명: <b>월산리_매각_데이터.json</b></p>
+      <div class="settings-actions">
+        <button class="btn btn-primary" id="btnExport">📥 내보내기</button>
+        <button class="btn btn-primary" id="btnImport">📤 가져오기</button>
+        <input type="file" id="fileImport" accept=".json,application/json">
+      </div>
+    </div>
+    <div class="settings-card">
+      <h3>🗂 데이터 초기화</h3>
+      <p>초기 데이터(엑셀 v1 기준)로 복원합니다.</p>
+      <div class="settings-actions"><button class="btn btn-danger" id="btnReset">⟳ 초기화</button></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-mark">월산리 토지 매각 프로젝트 v2 · 2026</div>
+  <div class="footer-sub">CRAFTED WITH PRECISION</div>
+</footer>
+
+<button class="fab" id="fabAdd" title="새 필지 추가">+</button>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div><div class="modal-title" id="modalTitle">편집</div><div class="modal-sub" id="modalSub"></div></div>
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="btnDelete" style="display:none">삭제</button>
+      <div style="margin-left:auto;display:flex;gap:10px">
+        <button class="btn btn-ghost" id="modalCancel">취소</button>
+        <button class="btn btn-primary" id="modalSave">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
