@@ -406,7 +406,7 @@ function openParcelModal(pid){
 
     <div class="modal-section-title">💰 단가 정보 (원/㎡)</div>
     <div class="field-row-3">
-      <div class="field"><label>공시지가</label><input id="f-gongsiUnit" type="text" inputmode="numeric" value="${p?.gongsiUnit||0}"></div>
+      <div class="field"><label>공시지가 (2026)</label><input id="f-gongsiUnit" type="text" inputmode="numeric" value="${p?.gongsiUnit||0}"></div>
       <div class="field"><label>기준가격 (부분)</label><input id="f-baseUnit" type="text" inputmode="numeric" value="${p?.baseUnit||0}"></div>
       <div class="field"><label>매도희망가 (B)</label><input id="f-targetUnit" type="text" inputmode="numeric" value="${p?.targetUnit||0}"></div>
     </div>
@@ -606,6 +606,161 @@ document.getElementById('btnSyncStop').addEventListener('click',()=>{if(!confirm
 document.getElementById('btnSyncNow').addEventListener('click',async()=>{await doPush();await doPull()});
 document.getElementById('btnCopyCode').addEventListener('click',async()=>{const c=document.getElementById('syncCodeOut').value;try{await navigator.clipboard.writeText(c);toast('복사 완료','ok')}catch{document.getElementById('syncCodeOut').select();document.execCommand('copy');toast('복사 완료','ok')}});
 (function bootSync(){const c=getSyncConfig();refreshSyncUI();if(c.enabled&&c.token&&c.gistId){doPull(true);startPullLoop()};setInterval(()=>{const x=getSyncConfig();if(x.enabled&&x.lastSync)setSyncLastTime(x.lastSync)},5000)})();
+
+// ============ 공시지가 일괄 갱신 모달 ============
+let gongsiDraft = {}; // {id: newGongsiUnit}
+
+function openGongsiModal() {
+  gongsiDraft = {};
+  renderGongsiTable();
+  document.getElementById('gongsiModalBg').classList.add('active');
+}
+function closeGongsiModal() {
+  document.getElementById('gongsiModalBg').classList.remove('active');
+  gongsiDraft = {};
+}
+
+function renderGongsiTable() {
+  const tbody = document.getElementById('gongsiTableBody');
+  let oldTotal = 0, newTotal = 0;
+  let rows = '';
+  let rowIdx = 0;
+  let currentGroup = '';
+
+  DATA.meta.owners.forEach(owner => {
+    const parcels = DATA.parcels.filter(p => p.group === owner);
+    if (!parcels.length) return;
+
+    parcels.forEach(p => {
+      rowIdx++;
+      const oldVal = p.gongsiUnit || 0;
+      const newVal = gongsiDraft[p.id] !== undefined ? gongsiDraft[p.id] : oldVal;
+      const chg = oldVal > 0 ? ((newVal - oldVal) / oldVal * 100) : 0;
+      const chgClass = chg > 0.01 ? 'up' : chg < -0.01 ? 'dn' : 'eq';
+      const chgText = oldVal > 0
+        ? (chg > 0 ? '+' : '') + chg.toFixed(1) + '%'
+        : '-';
+
+      oldTotal += oldVal * (p.area || 0);
+      newTotal += newVal * (p.area || 0);
+
+      rows += `<tr class="${p.isRoad ? 'road-row' : ''}" data-pid="${p.id}">
+        <td class="c" style="color:var(--text-muted);font-size:11px">${rowIdx}</td>
+        <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${escape(owner)}</td>
+        <td class="g-name">${escape(p.name)}${p.isRoad ? ' <span class="tag road" style="font-size:10px">도로</span>' : ''}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${escape(p.use)}</td>
+        <td class="g-old">${fmtArea(p.area)}</td>
+        <td class="g-old">${fmtKRW(oldVal)}</td>
+        <td class="g-new"><input
+          type="text" inputmode="numeric"
+          id="gi-${p.id}"
+          value="${newVal ? newVal.toLocaleString('ko-KR') : ''}"
+          placeholder="${oldVal.toLocaleString('ko-KR')}"
+          data-pid="${p.id}"
+          data-old="${oldVal}"
+        ></td>
+        <td class="g-chg ${chgClass}" id="gchg-${p.id}">${chgText}</td>
+      </tr>`;
+    });
+
+    // 소유자 소계
+    const subOld = DATA.parcels.filter(p => p.group === owner).reduce((s, p) => s + (p.gongsiUnit || 0) * (p.area || 0), 0);
+    const subNew = DATA.parcels.filter(p => p.group === owner).reduce((s, p) => {
+      const v = gongsiDraft[p.id] !== undefined ? gongsiDraft[p.id] : (p.gongsiUnit || 0);
+      return s + v * (p.area || 0);
+    }, 0);
+    rows += `<tr class="g-subtotal">
+      <td></td><td colspan="4" style="font-size:12px">${escape(owner)} 소계</td>
+      <td class="g-old">${fmtKRW(subOld)}</td>
+      <td class="g-old">${fmtKRW(subNew)}</td>
+      <td class="g-chg ${subOld > 0 && subNew !== subOld ? (subNew > subOld ? 'up' : 'dn') : 'eq'}">${subOld > 0 ? (((subNew - subOld) / subOld) * 100 > 0 ? '+' : '') + ((subNew - subOld) / subOld * 100).toFixed(1) + '%' : '-'}</td>
+    </tr>`;
+  });
+
+  tbody.innerHTML = rows;
+
+  // 상단 KPI 갱신
+  document.getElementById('gkOldTotal').textContent = fmtShort(oldTotal) + '원';
+  document.getElementById('gkNewTotal').textContent = fmtShort(newTotal) + '원';
+  const totalChg = oldTotal > 0 ? ((newTotal - oldTotal) / oldTotal * 100) : 0;
+  const totalChgEl = document.getElementById('gkChgRate');
+  totalChgEl.textContent = oldTotal > 0 ? (totalChg > 0 ? '+' : '') + totalChg.toFixed(2) + '%' : '-';
+  totalChgEl.style.color = totalChg > 0 ? 'var(--exp)' : totalChg < 0 ? 'var(--inc)' : 'var(--text-muted)';
+
+  // 입력 이벤트 바인딩
+  tbody.querySelectorAll('input[data-pid]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const raw = inp.value.replace(/[^\d]/g, '');
+      const numVal = parseInt(raw) || 0;
+      // 천단위 콤마 포맷팅
+      if (raw) inp.value = parseInt(raw).toLocaleString('ko-KR');
+      const pid = parseInt(inp.dataset.pid);
+      const oldV = parseInt(inp.dataset.old) || 0;
+      gongsiDraft[pid] = numVal;
+      // 변동률 실시간 갱신
+      const chg = oldV > 0 ? ((numVal - oldV) / oldV * 100) : 0;
+      const chgEl = document.getElementById('gchg-' + pid);
+      if (chgEl) {
+        chgEl.className = 'g-chg ' + (chg > 0.01 ? 'up' : chg < -0.01 ? 'dn' : 'eq');
+        chgEl.textContent = oldV > 0 ? (chg > 0 ? '+' : '') + chg.toFixed(1) + '%' : '-';
+      }
+      // 합계 KPI 실시간 갱신
+      updateGongsiKpi();
+    });
+  });
+}
+
+function updateGongsiKpi() {
+  let oldTotal = 0, newTotal = 0;
+  DATA.parcels.forEach(p => {
+    const oldV = p.gongsiUnit || 0;
+    const newV = gongsiDraft[p.id] !== undefined ? gongsiDraft[p.id] : oldV;
+    // 현재 입력창 값 우선
+    const inp = document.getElementById('gi-' + p.id);
+    const live = inp ? parseInt(inp.value.replace(/[^\d]/g, '')) || 0 : newV;
+    oldTotal += oldV * (p.area || 0);
+    newTotal += live * (p.area || 0);
+  });
+  document.getElementById('gkOldTotal').textContent = fmtShort(oldTotal) + '원';
+  document.getElementById('gkNewTotal').textContent = fmtShort(newTotal) + '원';
+  const totalChg = oldTotal > 0 ? ((newTotal - oldTotal) / oldTotal * 100) : 0;
+  const totalChgEl = document.getElementById('gkChgRate');
+  totalChgEl.textContent = oldTotal > 0 ? (totalChg > 0 ? '+' : '') + totalChg.toFixed(2) + '%' : '-';
+  totalChgEl.style.color = totalChg > 0 ? 'var(--exp)' : totalChg < 0 ? 'var(--inc)' : 'var(--text-muted)';
+}
+
+function saveGongsi() {
+  let changed = 0;
+  DATA.parcels.forEach(p => {
+    const inp = document.getElementById('gi-' + p.id);
+    if (!inp) return;
+    const raw = inp.value.replace(/[^\d]/g, '');
+    if (!raw) return;
+    const v = parseInt(raw);
+    if (v !== (p.gongsiUnit || 0)) {
+      p.gongsiUnit = v;
+      changed++;
+    }
+  });
+  if (changed === 0) { toast('변경된 공시지가가 없습니다', 'err'); return; }
+  flashSync('dirty');
+  saveData();
+  rerenderAll();
+  closeGongsiModal();
+  toast(`${changed}개 필지 공시지가 갱신 완료`, 'ok');
+}
+
+// 이벤트 바인딩
+document.getElementById('btnGongsiOpen').addEventListener('click', openGongsiModal);
+document.getElementById('gongsiModalClose').addEventListener('click', closeGongsiModal);
+document.getElementById('gongsiModalCancel').addEventListener('click', closeGongsiModal);
+document.getElementById('gongsiModalBg').addEventListener('click', e => { if (e.target.id === 'gongsiModalBg') closeGongsiModal(); });
+document.getElementById('btnGongsiSave').addEventListener('click', saveGongsi);
+document.getElementById('btnGongsiReset').addEventListener('click', () => {
+  gongsiDraft = {};
+  renderGongsiTable();
+  toast('입력값이 초기화되었습니다');
+});
 
 // 초기 부트
 bindScenarioToggle();
