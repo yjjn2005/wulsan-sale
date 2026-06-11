@@ -300,6 +300,35 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,system-ui,sans-serif;
 .footer-sub{font-size:11.5px;color:var(--text-light);margin-top:6px;letter-spacing:.06em}
 input[type="file"]{display:none}
 
+/* 공시지가 일괄입력 모달 */
+.gongsi-modal{max-width:860px}
+.gongsi-table{width:100%;border-collapse:collapse;font-size:13px}
+.gongsi-table thead{background:var(--navy);position:sticky;top:0;z-index:2}
+.gongsi-table th{padding:10px 9px;color:var(--gold);font-size:10.5px;font-weight:700;letter-spacing:.05em;text-align:left;white-space:nowrap}
+.gongsi-table th.r{text-align:right}
+.gongsi-table td{padding:8px 7px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+.gongsi-table tr.road-row{background:rgba(245,158,11,.04)}
+.gongsi-table tr.road-row:hover{background:rgba(245,158,11,.09)}
+.gongsi-table tr:hover{background:var(--surface-2)}
+.gongsi-table .g-name{font-weight:700;color:var(--navy);font-size:12.5px}
+.gongsi-table .g-old{font-variant-numeric:tabular-nums;color:var(--text-muted);font-size:12px;text-align:right}
+.gongsi-table .g-new input{width:130px;padding:7px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg-soft);font-family:inherit;font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+.gongsi-table .g-new input:focus{outline:none;border-color:var(--gold);background:#fff;box-shadow:0 0 0 3px rgba(201,169,97,.18)}
+.gongsi-table .g-chg{font-size:11.5px;font-weight:700;text-align:right;min-width:64px}
+.g-chg.up{color:var(--exp)}
+.g-chg.dn{color:var(--inc)}
+.g-chg.eq{color:var(--text-light)}
+.gongsi-table tr.g-subtotal td{background:linear-gradient(90deg,rgba(30,58,95,.06),rgba(30,58,95,.02));font-weight:700;color:var(--navy);font-size:12.5px}
+.gongsi-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.gongsi-kpi{background:var(--surface-2);border:1px solid var(--border-soft);border-radius:var(--radius);padding:14px 16px;text-align:center}
+.gongsi-kpi .gk-label{font-size:10.5px;font-weight:700;color:var(--gold-deep);letter-spacing:.15em;text-transform:uppercase;margin-bottom:5px}
+.gongsi-kpi .gk-val{font-family:'Noto Serif KR';font-size:18px;font-weight:700;color:var(--navy)}
+.gongsi-info{background:linear-gradient(135deg,var(--info-soft),#EFF6FF);border:1px solid #bfdbfe;border-radius:10px;padding:13px 16px;margin-bottom:14px;font-size:12.5px;color:var(--info);line-height:1.7}
+@media(max-width:600px){
+  .gongsi-summary{grid-template-columns:1fr 1fr}
+  .gongsi-table .g-new input{width:100px}
+}
+
 @media(max-width:600px){
   .hero{padding-top:28px}.section{padding:22px 16px}.panel{padding:20px 18px}
   .top-actions .sync-pill,.top-actions .scenario-pill{display:none}
@@ -528,6 +557,15 @@ input[type="file"]{display:none}
 <section class="view" id="view-settings">
   <div class="section">
     <div class="section-head"><div><h2 class="section-title">설정 · 동기화 · 백업</h2></div></div>
+    <!-- 공시지가 일괄 갱신 -->
+    <div class="settings-card">
+      <h3>📋 2026년 공시지가 일괄 갱신</h3>
+      <p>19개 필지의 공시지가(원/㎡)를 한 화면에서 일괄 입력·수정합니다. 기존 값과 변경률을 실시간으로 비교하며, 저장 시 공시가격 합계·시나리오 금액이 즉시 재계산됩니다.</p>
+      <div class="settings-actions">
+        <button class="btn btn-primary" id="btnGongsiOpen">📋 공시지가 일괄 입력 열기</button>
+      </div>
+    </div>
+
     <div class="settings-card" id="cloudSyncCard">
       <h3>☁️ 자동 클라우드 동기화 <span id="syncStateBadge" class="sync-badge off">OFF</span></h3>
       <p>한 기기에서 수정 → <b>5초 이내</b> 모든 기기 반영. 비공개 GitHub Gist.</p>
@@ -602,6 +640,54 @@ input[type="file"]{display:none}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 공시지가 일괄입력 모달 -->
+<div class="modal-bg" id="gongsiModalBg">
+  <div class="modal gongsi-modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📋 2026년 공시지가 일괄 갱신</div>
+        <div class="modal-sub" id="gongsiModalSub">19개 필지 · 원/㎡ 기준</div>
+      </div>
+      <button class="modal-close" id="gongsiModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="gongsi-info">
+        ℹ️ <b>공시지가</b>는 국토교통부 발표 개별공시지가(원/㎡)를 입력하세요. 변경 시 공시가격 합계와 양도세 시뮬의 참고 수치가 즉시 갱신됩니다.<br>
+        📌 조회: <a href="https://www.realtyprice.kr/notice/town/land.do" target="_blank" rel="noopener" class="link">부동산공시가격알리미 →</a>
+      </div>
+      <div class="gongsi-summary">
+        <div class="gongsi-kpi"><div class="gk-label">현재 공시가 합계</div><div class="gk-val" id="gkOldTotal">-</div></div>
+        <div class="gongsi-kpi"><div class="gk-label">신규 입력 합계</div><div class="gk-val" id="gkNewTotal">-</div></div>
+        <div class="gongsi-kpi"><div class="gk-label">전체 변동률</div><div class="gk-val" id="gkChgRate">-</div></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="gongsi-table" id="gongsiTable">
+          <thead>
+            <tr>
+              <th style="width:28px">#</th>
+              <th>소유자</th>
+              <th>지번</th>
+              <th>용도</th>
+              <th class="r">면적(㎡)</th>
+              <th class="r">현재 공시지가</th>
+              <th class="r">2026 신규 입력</th>
+              <th class="r">변동률</th>
+            </tr>
+          </thead>
+          <tbody id="gongsiTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="gongsiModalCancel">취소</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" id="btnGongsiReset">↺ 입력 초기화</button>
+        <button class="btn btn-primary" id="btnGongsiSave">✓ 저장 (공시지가 일괄 반영)</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="data.js"></script>
 <script src="app.js"></script>
